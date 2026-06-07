@@ -1,1 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Students Record System — C Project</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00ff88;
+    --cyan: #00e5ff;
+    --dark: #050f0a;
+    --card: #0a1a12;
+    --border: #00ff8833;
+    --text: #c8ffd4;
+  }
 
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 20s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  @keyframes gridMove {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(40px); }
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 50px;
+    animation: fadeDown 0.8s ease forwards;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--green);
+    border: 1px solid var(--green);
+    padding: 4px 14px;
+    margin-bottom: 20px;
+    animation: blink 2s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(22px, 5vw, 42px);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 30px var(--green), 0 0 60px var(--green);
+    letter-spacing: 2px;
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #5a8a6a;
+    letter-spacing: 2px;
+  }
+
+  /* Glitch effect on title */
+  h1 {
+    position: relative;
+  }
+  h1::before, h1::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0; right: 0;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+  }
+  h1::before {
+    color: #00e5ff;
+    animation: glitch1 4s infinite;
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+  }
+  h1::after {
+    color: #ff004c;
+    animation: glitch2 4s infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 75%, 0 75%);
+  }
+
+  @keyframes glitch1 {
+    0%, 90%, 100% { transform: none; opacity: 0; }
+    92% { transform: translateX(-3px); opacity: 0.8; }
+    94% { transform: translateX(3px); opacity: 0.8; }
+    96% { transform: none; opacity: 0; }
+  }
+  @keyframes glitch2 {
+    0%, 93%, 100% { transform: none; opacity: 0; }
+    95% { transform: translateX(3px); opacity: 0.6; }
+    97% { transform: translateX(-3px); opacity: 0.6; }
+    99% { transform: none; opacity: 0; }
+  }
+
+  /* Info cards */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 30px;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 16px;
+    border-radius: 4px;
+    text-align: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .info-card:hover {
+    border-color: var(--green);
+    box-shadow: 0 0 20px rgba(0,255,136,0.15);
+  }
+
+  .info-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #5a8a6a;
+    margin-bottom: 6px;
+  }
+
+  .info-value {
+    font-size: 14px;
+    color: var(--green);
+    font-weight: bold;
+  }
+
+  /* Features */
+  .features {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 30px;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+
+  .feature-tag {
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.25);
+    color: var(--green);
+    padding: 6px 14px;
+    font-size: 12px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  /* Code block */
+  .code-section {
+    animation: fadeUp 0.8s 0.5s ease both;
+    margin-bottom: 30px;
+  }
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #0d1f14;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    padding: 12px 20px;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .code-filename {
+    font-size: 12px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+
+  .dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+  .dot.r { background: #ff5f57; }
+  .dot.y { background: #febc2e; }
+  .dot.g { background: #28c840; }
+
+  .copy-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: #5a8a6a;
+    padding: 4px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    border-radius: 2px;
+  }
+
+  .copy-btn:hover {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .copy-btn.copied {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  pre {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 0 0 4px 4px;
+    padding: 24px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.7;
+    max-height: 480px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green) transparent;
+  }
+
+  pre::-webkit-scrollbar { width: 4px; }
+  pre::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
+
+  /* Syntax highlighting */
+  .kw { color: #00e5ff; }      /* keywords */
+  .ty { color: #ff9d00; }      /* types */
+  .fn { color: #00ff88; }      /* functions */
+  .st { color: #ffd700; }      /* strings */
+  .cm { color: #3d6b4f; font-style: italic; }  /* comments */
+  .nm { color: #ff6b9d; }      /* numbers */
+  .pp { color: #c792ea; }      /* preprocessor */
+
+  /* Buttons */
+  .btn-group {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.8s 0.6s ease both;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+  }
+
+  .btn:hover::before { transform: translateX(100%); }
+
+  .btn-primary {
+    background: var(--green);
+    color: #050f0a;
+    font-weight: bold;
+    box-shadow: 0 0 20px rgba(0,255,136,0.3);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 0 40px rgba(0,255,136,0.6);
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--cyan);
+    border: 1px solid var(--cyan);
+    box-shadow: 0 0 10px rgba(0,229,255,0.1);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(0,229,255,0.08);
+    box-shadow: 0 0 25px rgba(0,229,255,0.3);
+    transform: translateY(-2px);
+  }
+
+  /* Typing cursor */
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: var(--green);
+    animation: cursorBlink 1s step-end infinite;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+
+  @keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 60px;
+    font-size: 11px;
+    color: #2d4d38;
+    letter-spacing: 2px;
+    animation: fadeUp 0.8s 0.8s ease both;
+  }
+
+  .footer span { color: var(--green); }
+
+  /* Corner decorations */
+  .corner {
+    position: fixed;
+    width: 60px; height: 60px;
+    border-color: rgba(0,255,136,0.2);
+    border-style: solid;
+    z-index: 3;
+    pointer-events: none;
+  }
+  .corner.tl { top: 20px; left: 20px; border-width: 1px 0 0 1px; }
+  .corner.tr { top: 20px; right: 20px; border-width: 1px 1px 0 0; }
+  .corner.bl { bottom: 20px; left: 20px; border-width: 0 0 1px 1px; }
+  .corner.br { bottom: 20px; right: 20px; border-width: 0 1px 1px 0; }
+</style>
+</head>
+<body>
+
+<div class="corner tl"></div>
+<div class="corner tr"></div>
+<div class="corner bl"></div>
+<div class="corner br"></div>
+
+<div class="container">
+
+  <div class="header">
+    <div class="tag">▶ C PROGRAMMING PROJECT</div>
+    <h1 data-text="STUDENTS RECORD SYSTEM">STUDENTS RECORD SYSTEM</h1>
+    <p class="subtitle">DATA HANDLING &nbsp;|&nbsp; FILE I/O &nbsp;|&nbsp; STRUCT<span class="cursor"></span></p>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-label">DEVELOPER</div>
+      <div class="info-value">RAHUL</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">LANGUAGE</div>
+      <div class="info-value">C</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">INSTITUTE</div>
+      <div class="info-value">GP GAYA</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">BRANCH</div>
+      <div class="info-value">CSE</div>
+    </div>
+  </div>
+
+  <div class="features">
+    <span class="feature-tag">📁 File I/O</span>
+    <span class="feature-tag">🧩 Struct</span>
+    <span class="feature-tag">🔍 Search</span>
+    <span class="feature-tag">✏️ Add / Write</span>
+    <span class="feature-tag">📖 Read Records</span>
+    <span class="feature-tag">💾 Data Persistence</span>
+  </div>
+
+  <div class="code-section">
+    <div class="code-header">
+      <div class="dots">
+        <div class="dot r"></div>
+        <div class="dot y"></div>
+        <div class="dot g"></div>
+      </div>
+      <span class="code-filename">C codes.c</span>
+      <button class="copy-btn" onclick="copyCode(this)">[ COPY ]</button>
+    </div>
+    <pre id="codeBlock"><span class="pp">#include</span> <span class="st">&lt;stdio.h&gt;</span>
+
+<span class="kw">struct</span> <span class="ty">Students</span>{
+    <span class="ty">char</span> Name[<span class="nm">30</span>];
+    <span class="ty">int</span> Roll;
+    <span class="ty">float</span> Marks;
+    <span class="ty">long long</span> mob_no;
+};
+
+<span class="ty">void</span> <span class="fn">Get_Det</span>(<span class="kw">struct</span> <span class="ty">Students</span> *s1, <span class="ty">FILE</span> *CSE) {
+    <span class="fn">printf</span>(<span class="st">"Enter Name :"</span>);
+    <span class="fn">getchar</span>();
+    <span class="fn">scanf</span>(<span class="st">"%29[^\n]"</span>, s1-&gt;Name);
+    <span class="fn">fprintf</span>(CSE, <span class="st">"Name : %s\t"</span>, s1-&gt;Name);
+
+    <span class="fn">printf</span>(<span class="st">"Enter Roll No. :"</span>);
+    <span class="fn">scanf</span>(<span class="st">"%d"</span>,&amp;s1-&gt;Roll);
+    <span class="fn">fprintf</span>(CSE, <span class="st">"|\tRoll : %d\t"</span>, s1-&gt;Roll);
+
+    <span class="fn">printf</span>(<span class="st">"Enter Marks : "</span>);
+    <span class="fn">scanf</span>(<span class="st">"%f"</span>,&amp;s1-&gt;Marks);
+    <span class="fn">fprintf</span>(CSE, <span class="st">"|\tMarks : %.2f\t"</span>, s1-&gt;Marks);
+
+    <span class="fn">printf</span>(<span class="st">"Enter Mobile Number : "</span>);
+    <span class="fn">scanf</span>(<span class="st">"%lld"</span>,&amp;s1-&gt;mob_no);
+    <span class="fn">fprintf</span>(CSE, <span class="st">"|\tMobile : %lld\n"</span>, s1-&gt;mob_no);
+}
+
+<span class="ty">int</span> <span class="fn">main</span>(){
+    <span class="ty">FILE</span> *CSE;
+    <span class="ty">char</span> ch;
+    <span class="kw">struct</span> <span class="ty">Students</span> s1;
+    <span class="ty">char</span> c;
+
+    <span class="fn">printf</span>(<span class="st">"WELCOME! TO {STUDENT RECORD SYSTEM} PROJECT\n"</span>);
+    <span class="fn">printf</span>(<span class="st">"Enter what You want to do\ne.g-> r for read, w for write, a for add, s for search Student :\t"</span>);
+    <span class="fn">scanf</span>(<span class="st">" %c"</span>,&amp;c);
+
+    <span class="kw">if</span> (c == <span class="st">'r'</span>){
+        CSE = <span class="fn">fopen</span>(<span class="st">"CSE.txt"</span>, <span class="st">"r"</span>);
+        <span class="kw">if</span> (CSE == <span class="nm">NULL</span>){
+            <span class="fn">printf</span>(<span class="st">"No Records Found!"</span>);
+        } <span class="kw">else</span> {
+            <span class="kw">while</span>((ch = <span class="fn">fgetc</span>(CSE)) != EOF){
+                <span class="fn">printf</span>(<span class="st">"%c"</span>,ch);
+            }
+        }
+        <span class="fn">fclose</span>(CSE);
+    }
+    <span class="kw">else if</span> (c == <span class="st">'w'</span>){
+        CSE = <span class="fn">fopen</span>(<span class="st">"CSE.txt"</span>, <span class="st">"w"</span>);
+        <span class="fn">Get_Det</span>(&amp;s1, CSE);
+        <span class="fn">fclose</span>(CSE);
+    }
+    <span class="kw">else if</span> (c == <span class="st">'a'</span>){
+        CSE = <span class="fn">fopen</span>(<span class="st">"CSE.txt"</span>, <span class="st">"a"</span>);
+        <span class="fn">Get_Det</span>(&amp;s1, CSE);
+        <span class="fn">fclose</span>(CSE);
+    }
+    <span class="kw">else if</span> (c == <span class="st">'s'</span>){
+        CSE = <span class="fn">fopen</span>(<span class="st">"CSE.txt"</span>, <span class="st">"r"</span>);
+        <span class="kw">if</span> (CSE == <span class="nm">NULL</span>){
+            <span class="fn">printf</span>(<span class="st">"No Records Found!"</span>);
+        } <span class="kw">else</span> {
+            <span class="ty">char</span> name[<span class="nm">30</span>];
+            <span class="fn">printf</span>(<span class="st">"Enter Name of Student to Search (Case-Sensitive) : "</span>);
+            <span class="fn">getchar</span>();
+            <span class="fn">scanf</span>(<span class="st">"%29[^\n]"</span>, name);
+            <span class="ty">char</span> line[<span class="nm">100</span>];
+            <span class="ty">int</span> found = <span class="nm">0</span>;
+            <span class="kw">while</span>(<span class="fn">fgets</span>(line, <span class="kw">sizeof</span>(line), CSE)){
+                <span class="kw">if</span>(<span class="fn">strstr</span>(line, name) != <span class="nm">NULL</span>){
+                    <span class="fn">printf</span>(<span class="st">"%s"</span>, line);
+                    found = <span class="nm">1</span>;
+                }
+            }
+            <span class="kw">if</span> (!found){
+                <span class="fn">printf</span>(<span class="st">"Student Not Found!"</span>);
+            }
+        }
+        <span class="fn">fclose</span>(CSE);
+    }
+    <span class="kw">else</span>{
+        <span class="fn">printf</span>(<span class="st">"Invalid Input!"</span>);
+    }
+    <span class="kw">return</span> <span class="nm">0</span>;
+}</pre>
+  </div>
+
+  <div class="btn-group">
+    <a class="btn btn-primary" href="https://www.onlinegdb.com/online_c_compiler" target="_blank">
+      ▶ RUN ONLINE
+    </a>
+    <a class="btn btn-secondary" href="https://github.com/rahula062/STUDENTS-RECORD-SYSTEM" target="_blank">
+      ⬡ VIEW ON GITHUB
+    </a>
+  </div>
+
+  <div class="footer">
+    BUILT WITH <span>C</span> &nbsp;•&nbsp; RAHUL &nbsp;•&nbsp; GP GAYA CSE &nbsp;•&nbsp; <span>2025</span>
+  </div>
+
+</div>
+
+<script>
+  const rawCode = `#include <stdio.h>
+
+struct Students{
+    char Name[30];
+    int Roll;
+    float Marks;
+    long long mob_no;
+};
+
+void Get_Det(struct Students *s1, FILE *CSE) {
+    printf("Enter Name :");
+    getchar();
+    scanf("%29[^\\n]", s1->Name);
+    fprintf(CSE, "Name : %s\\t", s1->Name);
+
+    printf("Enter Roll No. :");
+    scanf("%d",&s1->Roll);
+    fprintf(CSE, "|\\tRoll : %d\\t", s1->Roll);
+
+    printf("Enter Marks : ");
+    scanf("%f",&s1->Marks);
+    fprintf(CSE, "|\\tMarks : %.2f\\t", s1->Marks);
+
+    printf("Enter Mobile Number : ");
+    scanf("%lld",&s1->mob_no);
+    fprintf(CSE, "|\\tMobile : %lld\\n", s1->mob_no);
+}
+
+int main(){
+    FILE *CSE;
+    char ch;
+    struct Students s1;
+    char c;
+
+    printf("WELCOME! TO {STUDENT RECORD SYSTEM} PROJECT\\n");
+    printf("Enter what You want to do\\ne.g-> r for read, w for write, a for add, s for search Student :\\t");
+    scanf(" %c",&c);
+
+    if (c == 'r'){
+        CSE = fopen("CSE.txt", "r");
+        if (CSE == NULL){ printf("No Records Found!"); }
+        else { while((ch = fgetc(CSE)) != EOF){ printf("%c",ch); } }
+        fclose(CSE);
+    }
+    else if (c == 'w'){
+        CSE = fopen("CSE.txt", "w");
+        Get_Det(&s1, CSE);
+        fclose(CSE);
+    }
+    else if (c == 'a'){
+        CSE = fopen("CSE.txt", "a");
+        Get_Det(&s1, CSE);
+        fclose(CSE);
+    }
+    else if (c == 's'){
+        CSE = fopen("CSE.txt", "r");
+        if (CSE == NULL){ printf("No Records Found!"); }
+        else {
+            char name[30];
+            printf("Enter Name of Student to Search (Case-Sensitive) : ");
+            getchar();
+            scanf("%29[^\\n]", name);
+            char line[100];
+            int found = 0;
+            while(fgets(line, sizeof(line), CSE)){
+                if(strstr(line, name) != NULL){ printf("%s", line); found = 1; }
+            }
+            if (!found){ printf("Student Not Found!"); }
+        }
+        fclose(CSE);
+    }
+    else{ printf("Invalid Input!"); }
+    return 0;
+}`;
+
+  function copyCode(btn) {
+    navigator.clipboard.writeText(rawCode).then(() => {
+      btn.textContent = '[ COPIED ✓ ]';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '[ COPY ]';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
